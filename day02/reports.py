@@ -47,6 +47,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# Part 1: 332
-# Part 2: 398
