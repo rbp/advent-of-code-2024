@@ -5,6 +5,7 @@ import re
 RE_MUL = re.compile(r'mul\(([0-9]+),([0-9]+)\)')
 RE_DO = re.compile(r"do\(\)")
 RE_DONT = re.compile(r"don't\(\)")
+RE_DONT_BLOCK = re.compile(r"don't\(\).*?(do\(\)|$)")
 
 
 def mul(memory):
@@ -29,12 +30,18 @@ def enabled_mul(memory):
             i = len(memory)
     return s
 
+def enabled_mul2(memory):
+    enabled = RE_DONT_BLOCK.sub(r"\1", memory)
+    return sum(int(a)*int(b) for a, b in RE_MUL.findall(enabled))
+
+
 def main():
     infile = sys.argv[1]
     with open(infile) as f:
-        memory = f.read().strip()
+        memory = "".join(line.strip() for line in f.readlines())    
     print(f"Part 1: {mul(memory)}")
     print(f"Part 2: {enabled_mul(memory)}")
+    print(f"Part 2/b: {enabled_mul2(memory)}")
 
 
 if __name__ == '__main__':
