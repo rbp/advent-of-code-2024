@@ -1,16 +1,35 @@
 import sys
 
 def xmas(puzzle):
-    found_at = []
+    found = 0
     for i, line in enumerate(puzzle):
         for j, ch in enumerate(line):
             if ch != 'X':
                 continue
-            # breakpoint()
             for next in directions.values():
                 if find(puzzle, next(i, j), 'MAS', next):
-                    found_at.append((i, j))
-    return len(found_at)
+                    found += 1
+    return found
+
+def x_mas(puzzle):
+    remaining = {
+        'M': 'AS',
+        'S': 'AM'
+    }
+    found = 0
+    for i, line in enumerate(puzzle):
+        for j, ch in enumerate(line):
+            if ch in 'MS':
+                down_right = directions["diag_down_right"]
+                down_left = directions["diag_down_left"]
+                if find(puzzle, down_right(i, j), remaining[ch], down_right) and \
+                    (
+                        find(puzzle, (i, j+2), 'MAS', down_left) or
+                        find(puzzle, (i, j+2), 'SAM', down_left)
+                    ):
+                    found += 1
+    return found
+
 
 directions = {
     "up": lambda i, j: (i-1, j),
@@ -45,6 +64,7 @@ def main():
     with open(infile) as f:
         puzzle = read_puzzle(f)
     print(f"Part 1: {xmas(puzzle)}")
+    print(f"Part 2: {x_mas(puzzle)}")
 
 if __name__ == '__main__':
     main()
