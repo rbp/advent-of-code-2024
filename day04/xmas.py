@@ -19,15 +19,16 @@ def x_mas(puzzle):
     found = 0
     for i, line in enumerate(puzzle):
         for j, ch in enumerate(line):
-            if ch in 'MS':
-                down_right = directions["diag_down_right"]
-                down_left = directions["diag_down_left"]
-                if find(puzzle, down_right(i, j), remaining[ch], down_right) and \
-                    (
-                        find(puzzle, (i, j+2), 'MAS', down_left) or
-                        find(puzzle, (i, j+2), 'SAM', down_left)
-                    ):
-                    found += 1
+            if ch not in 'MS':
+                continue
+            down_right = directions["diag_down_right"]
+            down_left = directions["diag_down_left"]
+            if find(puzzle, down_right(i, j), remaining[ch], down_right) and \
+                (
+                    find(puzzle, (i, j+2), 'MAS', down_left) or
+                    find(puzzle, (i, j+2), 'SAM', down_left)
+                ):
+                found += 1
     return found
 
 
