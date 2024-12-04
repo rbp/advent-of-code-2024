@@ -7,41 +7,24 @@ def xmas(puzzle):
             if ch != 'X':
                 continue
             # breakpoint()
-            for direction in [
-                "up",
-                "diag_up_right",
-                "right",
-                "diag_down_right",
-                "down",
-                "diag_down_left",
-                "left",
-                "diag_up_left"]:
-                if find(puzzle, direction, next(direction, i, j), 'MAS'):
+            for next in directions.values():
+                if find(puzzle, next(i, j), 'MAS', next):
                     found_at.append((i, j))
     return len(found_at)
 
-def next(direction, i, j):
-    match direction:
-        case "up":
-            return i-1, j
-        case "diag_up_right":
-            return i-1, j+1
-        case "right":
-            return i, j+1
-        case "diag_down_right":
-            return i+1, j+1
-        case "down":
-            return i+1, j
-        case "diag_down_left":
-            return i+1, j-1
-        case "left":
-            return i, j-1
-        case "diag_up_left":
-            return i-1, j-1
-        case _:
-            raise ValueError
+directions = {
+    "up": lambda i, j: (i-1, j),
+    "diag_up_right": lambda i, j: (i-1, j+1),
+    "right": lambda i, j: (i, j+1),
+    "diag_down_right": lambda i, j: (i+1, j+1),
+    "down": lambda i, j: (i+1, j),
+    "diag_down_left": lambda i, j: (i+1, j-1),
+    "left": lambda i, j: (i, j-1),
+    "diag_up_left": lambda i, j: (i-1, j-1),
+}
 
-def find(puzzle, direction, at, word_left):
+
+def find(puzzle, at, word_left, next):
     if not word_left:
         return True
     i, j = at[0], at[1]
@@ -51,7 +34,7 @@ def find(puzzle, direction, at, word_left):
         return False
     if puzzle[i][j] != word_left[0]:
         return False
-    return find(puzzle, direction, next(direction, i, j), word_left[1:])
+    return find(puzzle, next(i, j), word_left[1:], next)
 
 
 def read_puzzle(f):
