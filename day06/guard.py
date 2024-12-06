@@ -1,7 +1,14 @@
+from copy import deepcopy
 import sys
 
 
+class LoopException(Exception):
+    pass
+
+
 class GuardUp:
+    ch = "^"
+
     def next(self, i, j):
         return i - 1, j
 
@@ -10,6 +17,8 @@ class GuardUp:
 
 
 class GuardRight:
+    ch = ">"
+
     def next(self, i, j):
         return i, j + 1
 
@@ -18,6 +27,8 @@ class GuardRight:
 
 
 class GuardDown:
+    ch = "v"
+
     def next(self, i, j):
         return i + 1, j
 
@@ -26,6 +37,8 @@ class GuardDown:
 
 
 class GuardLeft:
+    ch = "<"
+
     def next(self, i, j):
         return i, j - 1
 
@@ -33,33 +46,56 @@ class GuardLeft:
         return Guard("^")
 
 
+ALL_GUARDS = [GuardUp, GuardRight, GuardDown, GuardLeft]
+
+
 def Guard(ch):
-    match ch:
-        case "^":
-            return GuardUp()
-        case ">":
-            return GuardRight()
-        case "v":
-            return GuardDown()
-        case "<":
-            return GuardLeft()
-        case _:
-            raise ValueError
-
-
-WALL = "#"
+    for guard in ALL_GUARDS:
+        if ch == guard.ch:
+            return guard()
+    raise ValueError
 
 
 def positions(map):
-    guard, i, j = find_guard(map)
-    map[i][j] = "."
-    n_pos = 0
+    return traverse(map, find_guard(map))
+
+
+def loops(map):
+    fresh_map = deepcopy(map)
+    starting = find_guard(map)
+    obstacles = set()
+
+    def try_obstacle(guard, i, j):
+        nonlocal starting, obstacles, fresh_map
+        if (i, j) != starting[1:] and (i, j) not in obstacles:
+            new_map = deepcopy(fresh_map)
+            new_map[i][j] = "#"
+            try:
+                traverse(new_map, starting)
+            except LoopException:
+                obstacles.add((i, j))
+
+    traverse(map, starting, at_step=try_obstacle)
+
+    return len(obstacles)
+
+
+def traverse(map, starting, at_step=lambda guard, i, j: None):
+    guard, i, j = starting
+
+    n_pos = 1
     while not outside(map, i, j):
         while wall_at(map, *guard.next(i, j)):
             guard = guard.turn()
+
+        at_step(guard, i, j)
+
+        if (i, j) != starting[1:] and map[i][j] == guard.ch:
+            raise LoopException
+
         if not visited(map, i, j):
-            map[i][j] = "X"
             n_pos += 1
+        map[i][j] = guard.ch
         i, j = guard.next(i, j)
     return n_pos
 
@@ -75,7 +111,7 @@ def find_guard(map):
 
 
 def wall_at(map, i, j):
-    return not outside(map, i, j) and map[i][j] == WALL
+    return not outside(map, i, j) and map[i][j] == "#"
 
 
 def outside(map, i, j):
@@ -83,7 +119,7 @@ def outside(map, i, j):
 
 
 def visited(map, i, j):
-    return map[i][j] == "X"
+    return map[i][j] in [g.ch for g in ALL_GUARDS]
 
 
 def read_map(f):
@@ -94,7 +130,8 @@ def main():
     infile = sys.argv[1]
     with open(infile) as f:
         map = read_map(f)
-    print(f"Part 1: {positions(map)}")
+    print(f"Part 1: {positions(deepcopy(map))}")
+    print(f"Part 2: {loops(deepcopy(map))}")
 
 
 if __name__ == "__main__":
