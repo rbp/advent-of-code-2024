@@ -1,9 +1,16 @@
+from collections import defaultdict
 import sys
 
 
 def defrag_checksum(disk):
     map = expand(disk)
     defrag(map)
+    return checksum(map)
+
+
+def nonfrag_checksum(disk):
+    map = expand(disk)
+    nonfrag(map)
     return checksum(map)
 
 
@@ -43,6 +50,54 @@ def defrag(map):
         group_idx += 1
 
 
+def nonfrag(map):
+    for group_idx in range(len(map) - 1, 0, -1):
+        groups_by_space = mk_space_lookup(map)
+        # The goal is to move files to the *leftmost* suitable space.
+        spaces = sorted(
+            [k for k, v in groups_by_space.items() if v[0] < group_idx],
+            key=lambda k: groups_by_space[k][0],
+        )
+        if not spaces:
+            continue
+
+        group = map[group_idx]
+        space_found = find_lowest_space(spaces, group[0][1])
+        if space_found is None:
+            continue
+        # pop(0)! Perhaps I can make the dict values be a stack, faster to pop
+        space_group_idx = groups_by_space[space_found].pop(0)
+        if not groups_by_space[space_found]:
+            del groups_by_space[space_found]
+
+        spacious_group = map[space_group_idx]
+        spacious_group[0].extend(group[0][:2])
+        spacious_group[1] -= group[0][1]
+
+        map[group_idx - 1][1] += group[0][1]
+        group[0][:2] = []
+
+
+def find_lowest_space(spaces, el, i=0, j=None):
+    # Warning, ordering is on leftmost fit, not closest fit!
+    # This is a dumb, linear search.
+    # A binary one needs to take the unusual ordering into account.
+    i = 0
+    while i < len(spaces) and spaces[i] < el:
+        i += 1
+    if i == len(spaces):
+        return None
+    return spaces[i]
+
+
+def mk_space_lookup(map):
+    groups_by_space = defaultdict(list)
+    for i, group in enumerate(map):
+        if group[1]:
+            groups_by_space[group[1]].append(i)
+    return groups_by_space
+
+
 def checksum(map):
     cs = 0
     pos = 0
@@ -53,6 +108,8 @@ def checksum(map):
             for i in range(count):
                 cs += pos * fid
                 pos += 1
+        for i in range(group[1]):
+            pos += 1
 
     return cs
 
@@ -62,6 +119,7 @@ def main():
     with open(infile) as f:
         disk = [int(i) for i in f.read().strip()]
     print(f"Part 1: {defrag_checksum(disk)}")
+    print(f"Part 2: {nonfrag_checksum(disk)}")
 
 
 if __name__ == "__main__":
